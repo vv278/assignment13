@@ -17,9 +17,7 @@ function App() {
 
   // Fetch expenses from Supabase
   const fetchExpenses = async () => {
-    const { data, error } = await supabase
-      .from("expenses")
-      .select("*");
+    const { data, error } = await supabase.from("expenses").select("*");
 
     if (error) {
       console.log("Error fetching data:", error);
@@ -55,18 +53,24 @@ function App() {
   };
 
   // Delete Expense
-    const deleteExpense = async (id: number) => {
-      const { error } = await supabase
-        .from("expenses")
-        .delete()
-        .eq("id", id);
+  const deleteExpense = async (id: number) => {
+    const { error } = await supabase
+      .from("expenses")
+      .delete()
+      .eq("id", id);
 
-      if (error) {
-        console.log("Error deleting expense:", error);
-      } else {
-        fetchExpenses();
-      }
-    };
+    if (error) {
+      console.log("Error deleting expense:", error);
+    } else {
+      fetchExpenses();
+    }
+  };
+
+  // Calculate total expenses
+  const totalExpenses = expenses.reduce(
+    (sum, exp) => sum + Number(exp.amount),
+    0
+  );
 
   return (
     <div className="container">
@@ -74,7 +78,6 @@ function App() {
 
       {/* FORM ROW */}
       <div className="formRow">
-
         {/* Title */}
         <input
           type="text"
@@ -92,10 +95,7 @@ function App() {
         />
 
         {/* Category Dropdown */}
-        <select
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-        >
+        <select value={category} onChange={(e) => setCategory(e.target.value)}>
           <option value="Food">Food</option>
           <option value="Transport">Transport</option>
           <option value="Shopping">Shopping</option>
@@ -104,16 +104,19 @@ function App() {
         </select>
 
         {/* Button */}
-        <button onClick={addExpense}>
-          Add Expense
-        </button>
+        <button onClick={addExpense}>Add Expense</button>
       </div>
+
+      {/* TOTAL EXPENSES */}
+      <h3>Total Expenses: ${totalExpenses.toFixed(2)}</h3>
 
       {/* EXPENSE LIST */}
       <ul>
         {expenses.map((exp) => (
           <li key={exp.id}>
-            {exp.title} - ${exp.amount} ({exp.category})
+            {exp.title} - ${Number(exp.amount).toFixed(2)} ({exp.category})
+
+            <button onClick={() => deleteExpense(exp.id)}>Delete</button>
           </li>
         ))}
       </ul>
