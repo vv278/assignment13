@@ -54,6 +54,20 @@ function App() {
     }
   };
 
+  // Delete Expense
+    const deleteExpense = async (id: number) => {
+      const { error } = await supabase
+        .from("expenses")
+        .delete()
+        .eq("id", id);
+
+      if (error) {
+        console.log("Error deleting expense:", error);
+      } else {
+        fetchExpenses();
+      }
+    };
+
   return (
     <div className="container">
       <h2>Expense Tracker</h2>
