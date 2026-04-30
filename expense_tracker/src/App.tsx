@@ -2,11 +2,35 @@ import { useEffect, useState } from "react";
 import "./App.css";
 import { supabase } from "./supabaseClient";
 
+import {
+  Chart as ChartJS,
+  ArcElement,
+  Tooltip,
+  Legend,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+} from "chart.js";
+
+import { Pie, Line } from "react-chartjs-2";
+
+ChartJS.register(
+  ArcElement,
+  Tooltip,
+  Legend,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement
+);
+
 type Expense = {
   id: number;
   title: string;
   amount: number;
   category: string;
+  created_at: string;
 };
 
 function App() {
@@ -14,8 +38,8 @@ function App() {
   const [title, setTitle] = useState("");
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState("Food");
+  const [searchTerm, setSearchTerm] = useState("");
 
-  // Fetch expenses from Supabase
   const fetchExpenses = async () => {
     const { data, error } = await supabase.from("expenses").select("*");
 
@@ -28,9 +52,23 @@ function App() {
 
   useEffect(() => {
     fetchExpenses();
+
+    const channel = supabase
+      .channel("expenses-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "expenses" },
+        () => {
+          fetchExpenses();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
-  // Add Expense
   const addExpense = async () => {
     if (!title || !amount) return;
 
@@ -52,12 +90,8 @@ function App() {
     }
   };
 
-  // Delete Expense
   const deleteExpense = async (id: number) => {
-    const { error } = await supabase
-      .from("expenses")
-      .delete()
-      .eq("id", id);
+    const { error } = await supabase.from("expenses").delete().eq("id", id);
 
     if (error) {
       console.log("Error deleting expense:", error);
@@ -66,19 +100,62 @@ function App() {
     }
   };
 
-  // Calculate total expenses
   const totalExpenses = expenses.reduce(
     (sum, exp) => sum + Number(exp.amount),
     0
   );
 
+  const filteredExpenses = expenses.filter((exp) =>
+    exp.title.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const categoryTotals: Record<string, number> = {};
+
+  expenses.forEach((exp) => {
+    categoryTotals[exp.category] =
+      (categoryTotals[exp.category] || 0) + Number(exp.amount);
+  });
+
+  const pieChartData = {
+    labels: Object.keys(categoryTotals),
+    datasets: [
+      {
+        label: "Spending by Category",
+        data: Object.values(categoryTotals),
+      },
+    ],
+  };
+
+  const monthlyTotals: Record<string, number> = {};
+
+  expenses.forEach((exp) => {
+    const date = new Date(exp.created_at);
+
+    const monthYear = date.toLocaleString("en-US", {
+      month: "short",
+      year: "numeric",
+    });
+
+    monthlyTotals[monthYear] =
+      (monthlyTotals[monthYear] || 0) + Number(exp.amount);
+  });
+
+  const lineChartData = {
+    labels: Object.keys(monthlyTotals),
+    datasets: [
+      {
+        label: "Monthly Spending",
+        data: Object.values(monthlyTotals),
+        tension: 0.3,
+      },
+    ],
+  };
+
   return (
     <div className="container">
       <h2>Expense Tracker</h2>
 
-      {/* FORM ROW */}
       <div className="formRow">
-        {/* Title */}
         <input
           type="text"
           placeholder="Title"
@@ -86,7 +163,6 @@ function App() {
           onChange={(e) => setTitle(e.target.value)}
         />
 
-        {/* Amount */}
         <input
           type="number"
           placeholder="Amount"
@@ -94,7 +170,6 @@ function App() {
           onChange={(e) => setAmount(e.target.value)}
         />
 
-        {/* Category Dropdown */}
         <select value={category} onChange={(e) => setCategory(e.target.value)}>
           <option value="Food">Food</option>
           <option value="Transport">Transport</option>
@@ -103,16 +178,33 @@ function App() {
           <option value="Other">Other</option>
         </select>
 
-        {/* Button */}
         <button onClick={addExpense}>Add Expense</button>
       </div>
 
-      {/* TOTAL EXPENSES */}
       <h3>Total Expenses: ${totalExpenses.toFixed(2)}</h3>
 
-      {/* EXPENSE LIST */}
+      <input
+        className="searchBox"
+        type="text"
+        placeholder="Search expenses by title..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+      />
+
+      <div className="charts">
+        <div className="chartBox">
+          <h3>Category-wise Summary</h3>
+          <Pie data={pieChartData} />
+        </div>
+
+        <div className="chartBox">
+          <h3>Monthly Spending</h3>
+          <Line data={lineChartData} />
+        </div>
+      </div>
+
       <ul>
-        {expenses.map((exp) => (
+        {filteredExpenses.map((exp) => (
           <li key={exp.id}>
             {exp.title} - ${Number(exp.amount).toFixed(2)} ({exp.category})
 

@@ -10,6 +10,7 @@
   gap: 10px;
   align-items: center;
   margin-bottom: 20px;
+  flex-wrap: wrap;
 }
 
 /* Inputs + Dropdown */
@@ -18,19 +19,16 @@ select {
   padding: 10px;
   border: 1px solid #ccc;
   border-radius: 5px;
-  height: 20px;
+  height: 40px;
   font-size: 14px;
 }
 
-/* Make inputs wider */
 input {
   width: 200px;
 }
 
-/* Dropdown width */
 select {
   width: 200px;
-  height: 40px;
 }
 
 /* Button */
@@ -42,13 +40,32 @@ button {
   color: white;
   border-radius: 5px;
   cursor: pointer;
+  margin-left: 10px;
 }
 
 button:hover {
   background: #45a049;
 }
 
-/* List */
+.searchBox {
+  width: 300px;
+  margin-bottom: 20px;
+}
+
+.charts {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.chartBox {
+  width: 400px;
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+}
+
 li {
-  margin: 5px 0;
+  margin: 10px 0;
 }
