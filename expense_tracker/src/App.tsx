@@ -11,6 +11,7 @@ import {
   LinearScale,
   PointElement,
   LineElement,
+  Title,
 } from "chart.js";
 
 import { Pie, Line } from "react-chartjs-2";
@@ -22,7 +23,8 @@ ChartJS.register(
   CategoryScale,
   LinearScale,
   PointElement,
-  LineElement
+  LineElement,
+  Title
 );
 
 type Expense = {
